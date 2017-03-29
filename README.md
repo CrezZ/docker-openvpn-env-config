@@ -1,4 +1,54 @@
-# OpenVPN for Docker
+# OpenVPN for RANCHER
+froked from Jpetazzo
+
+Now you can add KEY,CERT,CA, IP.. from ENV or Rancher secret store
+
+
+Project contain:
+
+- Cert/config generator crezz/dockvpn-CA
+- server crezz/dockvpn-server
+- client crezz/dockvpn-client
+
+
+
+ENV LIST
+For CA
+- CERT=you public certificate for server
+- KEY=you pprovate key for server
+- CA_CERT=you public certificate for CA
+- DH =you DH
+Only for server:
+- CA_KEY=you provate key for CA
+- IP=192.168.255.0/255.255.255.0 - change this for customize
+- EXTRNAL_IP=custom server IP or DNS to connect for, default is autoconfigured;
+- PORT=1194 - you can change it
+- PROTO=tcp or udp, if empty - use both proto
+Only for CA
+
+- 
+-
+
+
+Quick start - 
+
+Option 1
+Run server for existing keys/certs
+$key=`cat server.key`;
+$cert=`cat sever.crt`;
+$cakey=`cat ca.key`;
+$ca=`cat ca.crt`;
+$dh=`cat dh.dh`;
+docker run  -d -p 1194:1194 -e CERT=$cert -e KEY=$key -e CA=$ca -e CA_CERT=$cacert -e DH=$dh \
+           -e IP=10.0.0.1/255.255.255.240 -e PROTO=tcp -e EXTERNAL_IP=vpn.example.com crezz/dockvpn-server 
+Docker-compose
+
+
+Option 2 
+Run CA for generate all certs/keys
+docker run -i  crezz/dockvpn-ca 
+
+
 
 Quick instructions:
 
