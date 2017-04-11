@@ -1,5 +1,5 @@
 # OpenVPN for RANCHER
-froked from Jpetazzo
+forked from Jpetazzo
 
 Now you can add KEY,CERT,CA, IP.. from ENV or Rancher secret store
 
@@ -13,40 +13,106 @@ Project contain:
 
 
 ENV LIST
-For CA
+Only for CA
+- CA_KEY=you private certificate for CA
+For CA,server
 - CERT=you public certificate for server
 - KEY=you pprovate key for server
 - CA_CERT=you public certificate for CA
 - DH =you DH
 Only for server:
-- CA_KEY=you provate key for CA
-- IP=192.168.255.0/255.255.255.0 - change this for customize
-- EXTRNAL_IP=custom server IP or DNS to connect for, default is autoconfigured;
+- IP_NET=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.0/255.255.255.0
+- IP_SERVER=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.1/255.255.255.0
+- EXTRNAL_IP=<>  custom server IP or DNS to connect for, if empty - it is autoconfigured;
 - PORT=1194 - you can change it
-- PROTO=tcp or udp, if empty - use both proto
-Only for CA
+- PROTO="tcp-server" or "udp"
+- REDIRECT_GW=<true> - if not empty, default GW is set to OVPN server
+- ROUTE_PUSH=<x.x.x.x m.m.m.m> - if not empty, add alternative route
+- ROUTE_GW=<x.x.x.x> - if not empty, add gateway for alternative route ROUTE_PUSH
+- NAT=x.x.x.x/MASK - if not empty, masqarade traffic to host networks (NOT FOR INTERNET) to foreign containers
+- DNS1=<x.x.x.x> - default 169.254.169.250 - rancher DNS
+- DNS2=<x.x.x.x> - default 8.8.8.8 - google DNS
 
-- 
--
+Inset Full config 
+- CONFIG64="FULL CONFIG" - full config in format  base64. To prepare it, use `echo server.ovpn | base64`
+config format is
+<pre>
+param1
+param2
+....
+<key>
+`cat key.pem`
+</key>
+<cert>
+`cat cert.pem`
+</cert>
+<ca>
+`cat ca.pem`
+</ca>
+<dh>
+`cat dh.pem`
+</dh>
+<connection>
+remote IP PORT PROTO
+</connection>
+
+</pre>
+
+Insert only keys/cert section
+- KEYS64="" - keys/cert section config in format base64. To prepare it, use `echo keys.ovpn | base64`
+Format is
+<pre>
+<key>
+`cat key.pem`
+</key>
+<cert>
+`cat cert.pem`
+</cert>
+<ca>
+`cat ca.pem`
+</ca>
+<dh>
+`cat dh.pem`
+</dh>
+</pre>
+
+Quick start - Server
+
+Option 1 - Run server for existing keys/certs
+1) Read keys
+key="`cat server.key`";
+cert="`cat sever.crt`";
+cakey="`cat ca.key`";
+ca="`cat ca.crt`";
+dh="`cat dh.dh`";
+2) Run docker
+docker run  -d -p 1194:1194 
+           -e CERT="$cert" \
+           -e KEY="$key" \
+           -e CA="$ca" \
+           -e CA_CERT="$cacert" \
+           -e DH="$dh" \
+           -e IP_NET="10.0.0.0 255.255.255.240" \
+           -e IP_SERVER="10.0.0.1 255.255.255.240" \
+           -e NAT="10.0.0.0/28" \
+           -e PROTO=tcp-server \
+           -e EXTERNAL_IP=vpn.example.com \
+           crezz/dockervpn-server 
+
+Option 2 - with full config, stored in server.ovpn
+
+docker run  -d -p 1194:1194  -e CONFIG64="`echo server.ovpn | base64`" \
+           -e NAT="10.0.0.0/28" \
+           -e EXTERNAL_IP=vpn.example.com \
+           crezz/dockervpn-server 
 
 
-Quick start - 
-
-Option 1
-Run server for existing keys/certs
-$key=`cat server.key`;
-$cert=`cat sever.crt`;
-$cakey=`cat ca.key`;
-$ca=`cat ca.crt`;
-$dh=`cat dh.dh`;
-docker run  -d -p 1194:1194 -e CERT=$cert -e KEY=$key -e CA=$ca -e CA_CERT=$cacert -e DH=$dh \
-           -e IP=10.0.0.1/255.255.255.240 -e PROTO=tcp -e EXTERNAL_IP=vpn.example.com crezz/dockvpn-server 
-Docker-compose
 
 
 Option 2 
 Run CA for generate all certs/keys
-docker run -i  crezz/dockvpn-ca 
+
+docker run -i  crezz/dockervpn-ca 
 
 
 
