@@ -1,5 +1,5 @@
 # OpenVPN for RANCHER
-froked from Jpetazzo
+forked from Jpetazzo
 
 Now you can add KEY,CERT,CA, IP.. from ENV or Rancher secret store
 
@@ -13,19 +13,26 @@ Project contain:
 
 
 ENV LIST
-For CA
+For CA,server
 - CERT=you public certificate for server
 - KEY=you pprovate key for server
 - CA_CERT=you public certificate for CA
 - DH =you DH
 Only for server:
-- CA_KEY=you provate key for CA
-- IP=192.168.255.0/255.255.255.0 - change this for customize
-- EXTRNAL_IP=custom server IP or DNS to connect for, default is autoconfigured;
-- PORT=1194 - you can change it
+- IP_NET=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.0/255.255.255.0
+- IP_SERVER=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.1/255.255.255.0
+- EXTRNAL_IP=<>  custom server IP or DNS to connect for, default is autoconfigured;
+- PORT_UDP=1194 - you can change it
+- PORT_TCP=1194 - you can change it
 - PROTO=tcp or udp, if empty - use both proto
-Only for CA
+- REDIRECT_GW=<> - if yes, default GW is set to OVPN server
+- ROUTE_PUSH=<x.x.x.x m.m.m.m> - if not empty, add alternative route
+- ROUTE_GW=<x.x.x.x> - if not empty, add gateway for alternative route ROUTE_PUSH
 
+- DNS1=<x.x.x.x> - default 169.254.169.250 - rancher DNS
+- DNS2=<x.x.x.x> - default 8.8.8.8 - google DNS
+Only for CA
+- CA_KEY=you private certificate for CA
 - 
 -
 
