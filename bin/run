@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 [ -d /dev/net ] ||
@@ -6,65 +6,108 @@ set -e
 [ -c /dev/net/tun ] ||
     mknod /dev/net/tun c 10 200
 
+if [ -z "$CONFIG64" ];then
+#IF NOT CONFIG64 PRESENT
+
+n1=
+n2=
+IP_NET=${IP_NET:-"192.168.255.0 255.255.255.0"}
+IP_SERVER=${IP_SERVER:-"192.168.255.1 255.255.255.0"}
+PORT=${PORT:-1194}
+PROTO=${PROTO:-tcp-client}
+#DEFAULT_GW=${DEFAULT_GW:-""}
+#ROUTE_GW=${:=default}
+#ROUTE_PUSH=${:=default}
+DNS1=${DNS1:-"169.254.169.250"}
+DNS2=${DNS2:-"8.8.8.8"}
+
+if [ "$PROTO" = "udp" ]; then
+PROTO_CLIENT="udp"
+else
+PROTO_CLIENT="tcp-client"
+fi
+
+if [ -z "$ROUTE_PUSH"  ]; then
+PUSH1=
+PUSH2=
+else
+PUSH1="route $ROUTE_PUSH"
+PUSH2="route-gateway $ROUTE_GW"
+
+fi
+
+if [ -z "$ROUTE_PUSH"  ]; then
+DEF=
+else
+DEF="route $ROUTE_PUSH"
+
+fi
+
+
+
+##UNCOMMENT THIS IN PRODUCT
 cd /etc/openvpn
+
+
+
 # This file tells `serveconfig` that there is a config there
-touch placeholder
-[ -f dh.pem ] ||
-    openssl dhparam -out dh.pem 1024
-[ -f key.pem ] ||
-    openssl genrsa -out key.pem 2048
-chmod 600 key.pem
-[ -f csr.pem ] ||
-    openssl req -new -key key.pem -out csr.pem -subj /CN=OpenVPN/
-[ -f cert.pem ] ||
-    openssl x509 -req -in csr.pem -out cert.pem -signkey key.pem -days 24855
+#touch placeholder
+#[ -f dh.pem ] ||
+#    openssl dhparam -out dh.pem 1024
+#[ -f key.pem ] ||
+#    openssl genrsa -out key.pem 2048
+#chmod 600 key.pem
+#[ -f csr.pem ] ||
+#    openssl req -new -key key.pem -out csr.pem -subj /CN=OpenVPN/
+#[ -f cert.pem ] ||
+#    openssl x509 -req -in csr.pem -out cert.pem -signkey key.pem -days 24855
 
-[ -f tcp443.conf ] || cat >tcp443.conf <<EOF
-server 192.168.255.0 255.255.255.128
+echo $KEY > key.pem
+echo $CERT > cert.pem
+echo $CA_KEY > cakey.pem
+echo $CA > ca.pem
+echo $DH > dh.pem
+
+
+[ -f server.conf ] || cat >server.conf <<EOF
+server $IP_NET
 verb 3
 duplicate-cn
 key key.pem
-ca cert.pem
+ca ca.pem
 cert cert.pem
 dh dh.pem
 keepalive 10 60
 persist-key
 persist-tun
-push "dhcp-option DNS 8.8.8.8"
-push "dhcp-option DNS 8.8.4.4"
+push "dhcp-option DNS $DNS1"
+push "dhcp-option DNS $DNS2"
 
-proto tcp-server
-port 443
+proto $PROTO
+port $PORT
 dev tun443
-status openvpn-status-443.log
+status openvpn-status.log
 EOF
 
-[ -f udp1194.conf ] || cat >udp1194.conf <<EOF
-server 192.168.255.128 255.255.255.128
-verb 3
-duplicate-cn
-key key.pem
-ca cert.pem
-cert cert.pem
-dh dh.pem
-keepalive 10 60
-persist-key
-persist-tun
-push "dhcp-option DNS 8.8.8.8"
-push "dhcp-option DNS 8.8.4.4"
+#END if -z $CONFIG
+else
+    echo $CONFIG64 | base64 --decode > server.conf
+fi
 
-proto udp
-port 1194
-dev tun1194
-status openvpn-status-1194.log
-EOF
 
+if [ -z "$EXTERNAL_IP"]; then 
 MY_IP_ADDR=$(curl -s http://myip.enix.org/REMOTE_ADDR)
 [ "$MY_IP_ADDR" ] || {
     echo "Sorry, I could not figure out my public IP address."
     echo "(I use http://myip.enix.org/REMOTE_ADDR/ for that purpose.)"
     exit 1
 }
+
+else 
+    MY_IP_ADDR=$EXTERNAL_IP
+fi
+
+
 
 [ -f client.ovpn ] || cat >client.ovpn <<EOF
 client
@@ -86,12 +129,9 @@ redirect-gateway def1
 </dh>
 
 <connection>
-remote $MY_IP_ADDR 1194 udp
+remote $MY_IP_ADDR $PORT $PROTO_CLIENT
 </connection>
 
-<connection>
-remote $MY_IP_ADDR 443 tcp-client
-</connection>
 EOF
 
 [ -f client.http ] || cat >client.http <<EOF
@@ -102,9 +142,11 @@ Content-Length: `wc -c client.ovpn`
 `cat client.ovpn`
 EOF
 
-iptables -t nat -A POSTROUTING -s 192.168.255.0/24 -o eth0 -j MASQUERADE
+if [[ -v "$NAT" ]]; then
+iptables -t nat -A POSTROUTING -s $NAT -o eth0 -j MASQUERADE
+fi
 
-touch tcp443.log udp1194.log http8080.log
-while true ; do openvpn tcp443.conf ; done >> tcp443.log &
-while true ; do openvpn udp1194.conf ; done >> udp1194.log &
+
+touch ovpn.log  http8080.log
+while true ; do openvpn server.conf ; done >> ovpn.log &
 tail -F *.log
