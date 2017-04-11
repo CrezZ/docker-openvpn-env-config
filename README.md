@@ -58,6 +58,23 @@ remote IP PORT PROTO
 
 </pre>
 
+Insert only keys/cert section
+- KEYS64="" - keys/cert section config in format base64. To prepare it, use `echo keys.ovpn | base64`
+Format is
+<pre>
+<key>
+`cat key.pem`
+</key>
+<cert>
+`cat cert.pem`
+</cert>
+<ca>
+`cat ca.pem`
+</ca>
+<dh>
+`cat dh.pem`
+</dh>
+</pre>
 
 Quick start - Server
 
