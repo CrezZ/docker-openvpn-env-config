@@ -4,7 +4,7 @@ forked from Jpetazzo
 Now you can add KEY,CERT,CA, IP.. from ENV or Rancher secret store
 
 
-Project contain:
+## Project contain:
 
 - Cert/config generator crezz/dockvpn-CA
 - server crezz/dockvpn-server
@@ -12,15 +12,16 @@ Project contain:
 
 
 
-ENV LIST
-Only for CA
+##ENV LIST
+
+### Only for CA
 - CA_KEY=you private certificate for CA
-For CA,server
+### For CA,server
 - CERT=you public certificate for server
 - KEY=you pprovate key for server
 - CA_CERT=you public certificate for CA
 - DH =you DH
-Only for server:
+### Only for server:
 - IP_NET=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.0/255.255.255.0
 - IP_SERVER=<x.x.x.x m.m.m.m> - change this for customize, default 192.168.255.1/255.255.255.0
 - EXTRNAL_IP=<>  custom server IP or DNS to connect for, if empty - it is autoconfigured;
@@ -33,7 +34,7 @@ Only for server:
 - DNS1=<x.x.x.x> - default 169.254.169.250 - rancher DNS
 - DNS2=<x.x.x.x> - default 8.8.8.8 - google DNS
 
-Inset Full config 
+### Inset Full config 
 - CONFIG64="FULL CONFIG" - full config in format  base64. To prepare it, use `echo server.ovpn | base64`
 config format is
 <pre>
@@ -58,7 +59,7 @@ remote IP PORT PROTO
 
 </pre>
 
-Insert only keys/cert section
+### Insert only keys/cert section
 - KEYS64="" - keys/cert section config in format base64. To prepare it, use `echo keys.ovpn | base64`
 Format is
 <pre>
@@ -76,9 +77,9 @@ Format is
 </dh>
 </pre>
 
-Quick start - Server
+## Quick start - Server
 
-Option 1 - Run server for existing keys/certs
+### Option 1 - Run server for existing keys/certs
 1) Read keys
 key="`cat server.key`";
 cert="`cat sever.crt`";
@@ -99,7 +100,7 @@ docker run  -d -p 1194:1194
            -e EXTERNAL_IP=vpn.example.com \
            crezz/dockervpn-server 
 
-Option 2 - with full config, stored in server.ovpn
+### Option 2 - with full config, stored in server.ovpn
 
 docker run  -d -p 1194:1194  -e CONFIG64="`echo server.ovpn | base64`" \
            -e NAT="10.0.0.0/28" \
@@ -109,7 +110,7 @@ docker run  -d -p 1194:1194  -e CONFIG64="`echo server.ovpn | base64`" \
 
 
 
-Option 2 
+### Option 3 
 Run CA for generate all certs/keys
 
 docker run -i  crezz/dockervpn-ca 
